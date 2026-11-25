@@ -1,4 +1,4 @@
-name: Builder security checks
+name: Builder and private-source security checks
 
 on:
   push:
@@ -18,7 +18,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  scan:
+  builder-secret-scan:
+    name: Scan public builder for leaked secrets
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -28,7 +29,41 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Scan repository history for leaked secrets
+      - name: Scan builder history for leaked secrets
         uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  private-source-security:
+    name: Scan and test private application source
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out private application source with history
+        uses: actions/checkout@v6
+        with:
+          repository: loudply0-eng/Universal-Translator
+          ref: main
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Scan private source history for leaked secrets
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Analyze Dart source
+        run: flutter analyze --no-fatal-infos
+
+      - name: Run tests
+        run: flutter test
