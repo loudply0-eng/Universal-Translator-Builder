@@ -4,13 +4,23 @@ Public automation repository for building and publishing Universal Translator An
 
 The application source is maintained privately in [Universal-Translator](https://github.com/loudply0-eng/Universal-Translator).
 
-## Build security
-The build workflow will read the private source repository using a fine-grained, read-only GitHub token stored as the `SOURCE_REPO_TOKEN` Actions secret. Never commit that token, signing keystore, or signing passwords.
+## One-time connection to the private source
 
-## Release requirements
-- Build and test the private Flutter/Android source on GitHub-hosted Linux runners.
-- Sign release APKs with a persistent Android signing key held only in Actions secrets.
-- Publish versioned GitHub Releases and release metadata for in-app update checks.
-- The app must ask Android to install an update; Android's installer confirmation cannot be silently bypassed on ordinary devices.
+Create a **fine-grained personal access token** in GitHub:
+1. Open GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens.
+2. Set the resource owner to `loudply0-eng`.
+3. Grant access to **only** `Universal-Translator`.
+4. Under Repository permissions, set **Contents: Read-only**.
+5. Generate the token, then open this public repository's Settings → Secrets and variables → Actions → New repository secret.
+6. Set the secret name to `SOURCE_REPO_TOKEN` and paste the token as its value. Never put it in a file or message.
 
-A build workflow will be enabled once the first compilable application source is committed to the private repository.
+Then open Actions → **Build Universal Translator APK** → Run workflow. The workflow checks out the private source, generates the Android platform folder, runs analysis/tests, and uploads the release APK as a workflow artifact.
+
+## Release security
+- Keep the source repository private.
+- Keep the source token read-only and scoped to the one private repository.
+- Release signing keys and passwords must be stored only as Actions secrets.
+- Publish signed, versioned releases for in-app update checks.
+- Android requires the user to confirm installation of an update on ordinary non-rooted devices.
+
+The first build workflow is at `.github/workflows/build-android.yml`.
