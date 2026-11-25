@@ -35,6 +35,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   private-source-security:
+    # Dependabot pull_request runs do not receive repository Actions secrets.
+    if: github.actor != 'dependabot[bot]'
     name: Scan and test private application source
     runs-on: ubuntu-latest
     timeout-minutes: 30
