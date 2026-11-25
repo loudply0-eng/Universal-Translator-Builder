@@ -35,7 +35,7 @@ PROTECTION='{
   "restrictions": null,
   "allow_force_pushes": false,
   "allow_deletions": false,
-  "required_conversation_resolution": true
+  "required_conversation_resolution": { "enabled": true }
 }'
 if gh api --method PUT "repos/$REPO/branches/$BRANCH/protection" --input - <<<"$PROTECTION" >/dev/null 2>&1; then
   echo "OK: main branch protected against force-push and deletion."
