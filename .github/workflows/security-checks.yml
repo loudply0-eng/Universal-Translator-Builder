@@ -64,6 +64,12 @@ jobs:
       - name: Resolve dependencies
         run: flutter pub get
 
+      - name: Scan Flutter dependencies for known vulnerabilities
+        uses: google/osv-scanner-action/osv-scanner-action@0e457b42d0120153c352875e9b758b1e5c58c7e5 # v2.7.1
+        with:
+          scan-args: |-
+            --lockfile=pubspec.lock
+
       - name: Analyze Dart source
         run: flutter analyze --no-fatal-infos
 
