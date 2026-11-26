@@ -38,6 +38,23 @@ jobs:
           path: source
           persist-credentials: false
 
+      - name: Verify in-app updater source and release version
+        working-directory: source
+        run: |
+          grep -Fq "isNewerVersion" lib/services/update_service.dart || {
+            echo "The in-app update version checker is missing" >&2
+            exit 1
+          }
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          content = Path("pubspec.yaml").read_text(encoding="utf-8")
+          match = re.search(r"^version:[ ]*([0-9]+[.][0-9]+[.][0-9]+[+][0-9]+)[ ]*$", content, re.M)
+          if not match:
+              raise SystemExit("pubspec.yaml version must use MAJOR.MINOR.PATCH+BUILD")
+          print(f"Application version: {match.group(1)}")
+          PY
+
       - name: Set up Flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
