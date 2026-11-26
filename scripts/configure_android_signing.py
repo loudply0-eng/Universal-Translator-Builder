@@ -46,13 +46,7 @@ def main() -> None:
     supplied = [bool(value) for value in values.values()]
 
     if not any(supplied):
-        print("No production signing secrets configured; using temporary debug signing.")
-        (ROOT / "source" / "build").mkdir(parents=True, exist_ok=True)
-        (ROOT / "source" / "build" / "signing-mode.txt").write_text(
-            "development-debug-key\n", encoding="utf-8"
-        )
-        set_output("enabled", "false")
-        return
+        fail("persistent Android signing secrets are not configured.")
 
     if not all(supplied):
         missing = [key for key, value in values.items() if not value]
@@ -102,16 +96,20 @@ def main() -> None:
     KEYSTORE_FILE.chmod(stat.S_IRUSR | stat.S_IWUSR)
     GRADLE_FILE.write_text(gradle, encoding="utf-8")
 
+    validation_env = os.environ.copy()
+    validation_env["UT_KEYSTORE_VALIDATION_PASSWORD"] = values["ANDROID_KEYSTORE_PASSWORD"]
     result = subprocess.run(
         [
             "keytool", "-list", "-keystore", str(KEYSTORE_FILE),
-            "-storepass", values["ANDROID_KEYSTORE_PASSWORD"],
+            "-storepass:env", "UT_KEYSTORE_VALIDATION_PASSWORD",
             "-alias", values["ANDROID_KEY_ALIAS"],
         ],
+        env=validation_env,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         check=False,
     )
+    validation_env.pop("UT_KEYSTORE_VALIDATION_PASSWORD", None)
     if result.returncode != 0:
         KEYSTORE_FILE.unlink(missing_ok=True)
         fail("keystore password or alias validation failed.")
