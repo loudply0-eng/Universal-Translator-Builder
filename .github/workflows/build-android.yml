@@ -16,7 +16,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: universal-translator-android-build
+  group: universal-translator-android-build-v2
   cancel-in-progress: true
 
 jobs:
