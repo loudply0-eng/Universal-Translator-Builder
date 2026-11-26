@@ -187,7 +187,7 @@ jobs:
             printf 'builder_commit=%s\n' "$GITHUB_SHA"
             printf 'application_id=%s\n' "com.loudply.universaltranslator.universal_translator"
             printf 'signing_mode=%s\n' "$(cat build/signing-mode.txt)"
-            printf 'signing_certificate_sha256=%s\\n' "${{ steps.verify_signing.outputs.certificate_sha256 }}"
+            printf 'signing_certificate_sha256=%s\n' "${{ steps.verify_signing.outputs.certificate_sha256 }}"
             printf 'flutter_version=%s\n' "$(flutter --version | sed -n '1p')"
           } > build/build-info.txt
 
