@@ -18,9 +18,9 @@ Then open Actions → **Build Universal Translator APK** → Run workflow. The w
 
 ## One-time Android production signing
 
-The APK can be built without signing secrets for development, but that output uses a temporary CI debug key and cannot be used as a reliable upgrade target.
+The release workflow now requires the persistent production signing secrets. It intentionally fails rather than producing a temporary-key APK if those secrets are missing.
 
-Before the first production release, clone this repository on a machine with a JDK and GitHub CLI, authenticate with `gh auth login`, then run from the repository root:
+The persistent JKS key has been generated on the Oracle server and all four Actions secrets have been uploaded. A signed APK has been built and its SHA-256 certificate fingerprint has been verified. The setup script below is retained for secure recovery/new environments; do not run it again on top of an existing key:
 
 ```bash
 bash scripts/setup-android-signing.sh
@@ -57,11 +57,11 @@ The private application currently includes:
 - Provider-injection contract tests plus automated Flutter analysis and unit/widget tests before an APK is uploaded.
 - Each build artifact includes a SHA-256 checksum and a build manifest recording the exact private-source commit.
 
-Implemented in the app: release-update checking, explicit user approval, APK SHA-256 verification, and Android installer handoff. Not yet production-ready: stable release signing and publishing a signed GitHub Release containing `universal-translator.apk` with a SHA-256 asset digest. Voice translation, OCR/screen capture, and floating translation overlay are also not implemented. The current APK is a development artifact, not a production-ready release.
+Implemented in the app: release-update checking, explicit user approval, APK SHA-256 verification, and Android installer handoff. Persistent production signing is configured, and the current signed candidate has passed APK signature verification. The first signed GitHub Release containing `universal-translator.apk` and its SHA-256 digest has not yet been published. Voice translation, OCR/screen capture, and floating translation overlay are also not implemented.
 
 See the private source repository's `PRIVACY.md` for current text-processing and local-storage behavior.
 
 The first build workflow is at `.github/workflows/build-android.yml`.
 
 
-Routine pushes to `main` only build and upload a verification artifact; they never publish a GitHub Release. Release publication is an explicit manual workflow input and remains blocked until the persistent signing secrets are configured and validated.
+Routine pushes to `main` only build and upload a signed verification artifact; they never publish a GitHub Release. Release publication is an explicit manual workflow input (`publish_release=true`) and requires a version not already used by a GitHub Release.
