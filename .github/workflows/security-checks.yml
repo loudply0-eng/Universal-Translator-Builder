@@ -29,6 +29,11 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Validate Android signing setup scripts
+        run: |
+          python3 -m py_compile scripts/configure_android_signing.py
+          bash -n scripts/setup-android-signing.sh
+
       - name: Scan builder history for leaked secrets
         uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3
         env:
