@@ -49,7 +49,7 @@ jobs:
           from pathlib import Path
           manifest = Path("android/app/src/main/AndroidManifest.xml")
           content = manifest.read_text(encoding="utf-8")
-          permission = '    <uses-permission android:name="android.permission.INTERNET" />\\n'
+          permission = '    <uses-permission android:name="android.permission.INTERNET" />\n'
           if "android.permission.INTERNET" not in content:
               content = content.replace("<application", permission + "    <application", 1)
               manifest.write_text(content, encoding="utf-8")
@@ -84,10 +84,10 @@ jobs:
           APK="build/app/outputs/flutter-apk/app-release.apk"
           sha256sum "$APK" > "$APK.sha256"
           {
-            printf 'app_version=%s\\n' "$APP_VERSION"
-            printf 'source_commit=%s\\n' "$(git rev-parse HEAD)"
-            printf 'builder_commit=%s\\n' "$GITHUB_SHA"
-            printf 'flutter_version=%s\\n' "$(flutter --version | sed -n '1p')"
+            printf 'app_version=%s\n' "$APP_VERSION"
+            printf 'source_commit=%s\n' "$(git rev-parse HEAD)"
+            printf 'builder_commit=%s\n' "$GITHUB_SHA"
+            printf 'flutter_version=%s\n' "$(flutter --version | sed -n '1p')"
           } > build/build-info.txt
 
       - name: Upload APK artifact
