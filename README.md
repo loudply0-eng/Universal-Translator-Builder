@@ -30,6 +30,7 @@ The private application currently includes:
 - On-device source-language detection before sending translation requests.
 - Local translation history and favorites, stored on the device (up to 100 records).
 - Automated Flutter analysis and unit/widget tests before an APK is uploaded.
+- Each build artifact includes a SHA-256 checksum and a build manifest recording the exact private-source commit.
 
 Not yet implemented: voice translation, OCR/screen capture, floating translation overlay, signed production releases, and in-app update installation. The current APK is a development artifact, not a production-ready release.
 
