@@ -1,7 +1,10 @@
 name: Build Universal Translator APK
 
-on:
+"on":
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -61,15 +64,18 @@ jobs:
           APK="build/app/outputs/flutter-apk/app-release.apk"
           sha256sum "$APK" > "$APK.sha256"
           {
-            printf 'source_commit=%s\n' "$(git rev-parse HEAD)"
-            printf 'builder_commit=%s\n' "$GITHUB_SHA"
-            printf 'flutter_version=%s\n' "$(flutter --version | sed -n '1p')"
+            printf 'source_commit=%s\\n' "$(git rev-parse HEAD)"
+            printf 'builder_commit=%s\\n' "$GITHUB_SHA"
+            printf 'flutter_version=%s\\n' "$(flutter --version | sed -n '1p')"
           } > build/build-info.txt
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: universal-translator-0.1.0
-          path: |\n            source/build/app/outputs/flutter-apk/app-release.apk\n            source/build/app/outputs/flutter-apk/app-release.apk.sha256\n            source/build/build-info.txt
+          path: |
+            source/build/app/outputs/flutter-apk/app-release.apk
+            source/build/app/outputs/flutter-apk/app-release.apk.sha256
+            source/build/build-info.txt
           if-no-files-found: error
           retention-days: 14
