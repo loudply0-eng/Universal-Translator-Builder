@@ -26,11 +26,11 @@ Then open Actions → **Build Universal Translator APK** → Run workflow. The w
 ## Current application capabilities
 
 The private application currently includes:
-- Arabic-first text translation through the MyMemory HTTPS API.
+- Arabic-first text translation through a provider interface, currently backed by the MyMemory HTTPS API.
 - On-device source-language detection before sending translation requests.
 - Local translation history and favorites, stored on the device (up to 100 records).
 - Exact-match local translation cache to reuse saved results and reduce repeat API usage.
-- Automated Flutter analysis and unit/widget tests before an APK is uploaded.
+- Provider-injection contract tests plus automated Flutter analysis and unit/widget tests before an APK is uploaded.
 - Each build artifact includes a SHA-256 checksum and a build manifest recording the exact private-source commit.
 
 Not yet implemented: voice translation, OCR/screen capture, floating translation overlay, signed production releases, and in-app update installation. The current APK is a development artifact, not a production-ready release.
