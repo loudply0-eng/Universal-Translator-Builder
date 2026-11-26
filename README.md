@@ -14,7 +14,7 @@ Create a **fine-grained personal access token** in GitHub:
 5. Generate the token, then open this public repository's Settings → Secrets and variables → Actions → New repository secret.
 6. Set the secret name to `SOURCE_REPO_TOKEN` and paste the token as its value. Never put it in a file or message.
 
-Then open Actions → **Build Universal Translator APK** → Run workflow. The workflow checks out the private source, generates the Android platform folder, runs analysis/tests, and uploads the release APK as a workflow artifact.
+Then open Actions → **Build Universal Translator APK** → Run workflow. The workflow checks out the private source, generates the Android platform folder, declares and verifies network/package-installer permissions, runs analysis/tests, and uploads the APK, checksum, and source/build manifest as a workflow artifact.
 
 ## Release security
 - Keep the source repository private.
@@ -35,7 +35,7 @@ The private application currently includes:
 - Provider-injection contract tests plus automated Flutter analysis and unit/widget tests before an APK is uploaded.
 - Each build artifact includes a SHA-256 checksum and a build manifest recording the exact private-source commit.
 
-Not yet implemented: voice translation, OCR/screen capture, floating translation overlay, signed production releases, and in-app update installation. The current APK is a development artifact, not a production-ready release.
+Implemented in the app: release-update checking, explicit user approval, APK SHA-256 verification, and Android installer handoff. Not yet production-ready: stable release signing and publishing a signed GitHub Release containing `universal-translator.apk` with a SHA-256 asset digest. Voice translation, OCR/screen capture, and floating translation overlay are also not implemented. The current APK is a development artifact, not a production-ready release.
 
 See the private source repository's `PRIVACY.md` for current text-processing and local-storage behavior.
 
