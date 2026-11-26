@@ -2,12 +2,18 @@ name: Build Universal Translator APK
 
 "on":
   workflow_dispatch:
+    inputs:
+      publish_release:
+        description: "Publish a signed GitHub Release for in-app updates (requires the persistent signing secrets)."
+        required: false
+        default: false
+        type: boolean
   push:
     branches:
       - main
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: universal-translator-android-build
@@ -41,6 +47,15 @@ jobs:
       - name: Generate Android platform project
         working-directory: source
         run: flutter create --platforms=android --org com.loudply.universaltranslator --project-name universal_translator .
+
+      - name: Configure persistent Android release signing
+        id: signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: python3 scripts/configure_android_signing.py
 
       - name: Allow network access for translation requests
         working-directory: source
@@ -86,7 +101,29 @@ jobs:
 
       - name: Build release APK
         working-directory: source
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: flutter build apk --release
+
+      - name: Verify APK signing mode
+        working-directory: source
+        env:
+          SIGNING_ENABLED: ${{ steps.signing.outputs.enabled }}
+        run: |
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+          if [ "$SIGNING_ENABLED" = "true" ]; then
+            SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+            APKSIGNER="$(find "$SDK_ROOT/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+            if [ -z "$APKSIGNER" ]; then
+              echo "Android apksigner tool was not found" >&2
+              exit 1
+            fi
+            "$APKSIGNER" verify --verbose --print-certs "$APK"
+          else
+            echo "Development artifact: signed by a temporary CI debug key; not suitable for upgrading production installs."
+          fi
 
       - name: Generate APK checksum and build manifest
         id: build_metadata
@@ -104,6 +141,8 @@ jobs:
             printf 'app_version=%s\n' "$APP_VERSION"
             printf 'source_commit=%s\n' "$(git rev-parse HEAD)"
             printf 'builder_commit=%s\n' "$GITHUB_SHA"
+            printf 'application_id=%s\n' "com.loudply.universaltranslator.universal_translator"
+            printf 'signing_mode=%s\n' "$(cat build/signing-mode.txt)"
             printf 'flutter_version=%s\n' "$(flutter --version | sed -n '1p')"
           } > build/build-info.txt
 
@@ -117,3 +156,31 @@ jobs:
             source/build/build-info.txt
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish signed GitHub Release for in-app updates
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_release == true }}
+        working-directory: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SIGNING_ENABLED: ${{ steps.signing.outputs.enabled }}
+          APP_VERSION: ${{ steps.build_metadata.outputs.app_version }}
+        run: |
+          if [ "$SIGNING_ENABLED" != "true" ]; then
+            echo "Refusing to publish: persistent Android signing secrets are not configured." >&2
+            exit 1
+          fi
+          if ! [[ "$APP_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+\+[0-9]+$ ]]; then
+            echo "Refusing to publish: pubspec version must be MAJOR.MINOR.PATCH+BUILD." >&2
+            exit 1
+          fi
+          TAG="v$APP_VERSION"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists. Increase the app version before publishing again." >&2
+            exit 1
+          fi
+          cp build/app/outputs/flutter-apk/app-release.apk universal-translator.apk
+          sha256sum universal-translator.apk > universal-translator.apk.sha256
+          gh release create "$TAG" universal-translator.apk universal-translator.apk.sha256 \
+            --target "$GITHUB_SHA" \
+            --title "Universal Translator $APP_VERSION" \
+            --notes "Signed Universal Translator Android release. The app verifies the APK SHA-256 before handing it to Android's package installer. Android checks the signing certificate and requests user confirmation."
