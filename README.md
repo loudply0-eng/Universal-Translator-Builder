@@ -16,6 +16,28 @@ Create a **fine-grained personal access token** in GitHub:
 
 Then open Actions → **Build Universal Translator APK** → Run workflow. The workflow checks out the private source, generates the Android platform folder, declares and verifies network/package-installer permissions, runs analysis/tests, and uploads the APK, checksum, and source/build manifest as a workflow artifact.
 
+## One-time Android production signing
+
+The APK can be built without signing secrets for development, but that output uses a temporary CI debug key and cannot be used as a reliable upgrade target.
+
+Before the first production release, clone this repository on a machine with a JDK and GitHub CLI, authenticate with `gh auth login`, then run from the repository root:
+
+```bash
+bash scripts/setup-android-signing.sh
+```
+
+The script creates a persistent JKS keystore locally and uploads these four secrets to this repository without printing their values:
+- `ANDROID_KEYSTORE_BASE64`
+- `ANDROID_KEYSTORE_PASSWORD`
+- `ANDROID_KEY_ALIAS`
+- `ANDROID_KEY_PASSWORD`
+
+It refuses to overwrite an existing keystore. Back up `universal-translator-release.jks` and its password securely in more than one place. Losing either means future APKs cannot be signed as compatible updates. Never commit, email, or paste the keystore or passwords into chat.
+
+After the secrets are present, open Actions → **Build Universal Translator APK** → Run workflow. Keep `publish_release` disabled for a test build. To publish a production update, first increment `version` in the private source `pubspec.yaml` (format `MAJOR.MINOR.PATCH+BUILD`), then run the workflow with `publish_release` enabled. The workflow refuses to publish if persistent signing is unavailable or that version's release tag already exists.
+
+**Upgrade warning:** the earlier development APKs use temporary CI debug certificates. Android will not let a production-signed APK update one of those installs. Before moving to the first persistent-key release, uninstall the development build and install the signed release; local app data may be removed.
+
 ## Release security
 - Keep the source repository private.
 - Keep the source token read-only and scoped to the one private repository.
