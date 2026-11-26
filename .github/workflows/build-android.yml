@@ -67,6 +67,10 @@ jobs:
             echo "Android INTERNET permission is missing" >&2
             exit 1
           }
+          grep -Fq 'android.permission.REQUEST_INSTALL_PACKAGES' android/app/src/main/AndroidManifest.xml || {
+            echo "Android package installer permission is missing" >&2
+            exit 1
+          }
 
       - name: Resolve dependencies
         working-directory: source
