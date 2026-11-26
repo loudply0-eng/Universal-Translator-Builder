@@ -29,6 +29,7 @@ The private application currently includes:
 - Arabic-first text translation through the MyMemory HTTPS API.
 - On-device source-language detection before sending translation requests.
 - Local translation history and favorites, stored on the device (up to 100 records).
+- Exact-match local translation cache to reuse saved results and reduce repeat API usage.
 - Automated Flutter analysis and unit/widget tests before an APK is uploaded.
 - Each build artifact includes a SHA-256 checksum and a build manifest recording the exact private-source commit.
 
