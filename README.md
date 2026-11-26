@@ -23,4 +23,16 @@ Then open Actions → **Build Universal Translator APK** → Run workflow. The w
 - Publish signed, versioned releases for in-app update checks.
 - Android requires the user to confirm installation of an update on ordinary non-rooted devices.
 
+## Current application capabilities
+
+The private application currently includes:
+- Arabic-first text translation through the MyMemory HTTPS API.
+- On-device source-language detection before sending translation requests.
+- Local translation history and favorites, stored on the device (up to 100 records).
+- Automated Flutter analysis and unit/widget tests before an APK is uploaded.
+
+Not yet implemented: voice translation, OCR/screen capture, floating translation overlay, signed production releases, and in-app update installation. The current APK is a development artifact, not a production-ready release.
+
+See the private source repository's `PRIVACY.md` for current text-processing and local-storage behavior.
+
 The first build workflow is at `.github/workflows/build-android.yml`.
