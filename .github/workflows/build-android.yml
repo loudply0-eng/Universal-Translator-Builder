@@ -125,22 +125,49 @@ jobs:
         run: flutter build apk --release
 
       - name: Verify APK signing mode
+        id: verify_signing
         working-directory: source
         env:
           SIGNING_ENABLED: ${{ steps.signing.outputs.enabled }}
+          EXPECTED_CERT_SHA256: "a701805816d8a5ecae5ca45117cb42592f279b3f5a05fead40886e11ee8d2c15"
+          EXPECTED_APPLICATION_ID: "com.loudply.universaltranslator.universal_translator"
         run: |
+          set -euo pipefail
           APK="build/app/outputs/flutter-apk/app-release.apk"
-          if [ "$SIGNING_ENABLED" = "true" ]; then
-            SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
-            APKSIGNER="$(find "$SDK_ROOT/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
-            if [ -z "$APKSIGNER" ]; then
-              echo "Android apksigner tool was not found" >&2
-              exit 1
-            fi
-            "$APKSIGNER" verify --verbose --print-certs "$APK"
-          else
-            echo "Development artifact: signed by a temporary CI debug key; not suitable for upgrading production installs."
+          if [ "$SIGNING_ENABLED" != "true" ]; then
+            echo "Persistent production signing is not configured; refusing to produce a distributable APK." >&2
+            exit 1
           fi
+
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          APKSIGNER="$(find "$SDK_ROOT/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          AAPT="$(find "$SDK_ROOT/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          if [ -z "$APKSIGNER" ] || [ -z "$AAPT" ]; then
+            echo "Android apksigner or aapt tool was not found" >&2
+            exit 1
+          fi
+
+          SIGNATURE_OUTPUT="$("$APKSIGNER" verify --verbose --print-certs "$APK")"
+          printf '%s\\n' "$SIGNATURE_OUTPUT"
+          ACTUAL_CERT_SHA256="$(printf '%s\\n' "$SIGNATURE_OUTPUT" | sed -n 's/.*certificate SHA-256 digest: //p' | head -n 1 | tr -d '[:space:]:' | tr '[:upper:]' '[:lower:]')"
+          if [ "$ACTUAL_CERT_SHA256" != "$EXPECTED_CERT_SHA256" ]; then
+            echo "APK signing certificate does not match the pinned persistent release certificate." >&2
+            exit 1
+          fi
+
+          printf '%s\\n' "$SIGNATURE_OUTPUT" | grep -Fq 'Verified using v2 scheme (APK Signature Scheme v2): true' || {
+            echo "APK Signature Scheme v2 verification failed." >&2
+            exit 1
+          }
+
+          ACTUAL_APPLICATION_ID="$("$AAPT" dump badging "$APK" | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p" | head -n 1)"
+          if [ "$ACTUAL_APPLICATION_ID" != "$EXPECTED_APPLICATION_ID" ]; then
+            echo "Unexpected APK application ID: $ACTUAL_APPLICATION_ID" >&2
+            exit 1
+          fi
+
+          echo "certificate_sha256=$ACTUAL_CERT_SHA256" >> "$GITHUB_OUTPUT"
+          echo "Verified fixed application ID and persistent signing certificate."
 
       - name: Generate APK checksum and build manifest
         id: build_metadata
@@ -160,6 +187,7 @@ jobs:
             printf 'builder_commit=%s\n' "$GITHUB_SHA"
             printf 'application_id=%s\n' "com.loudply.universaltranslator.universal_translator"
             printf 'signing_mode=%s\n' "$(cat build/signing-mode.txt)"
+            printf 'signing_certificate_sha256=%s\\n' "${{ steps.verify_signing.outputs.certificate_sha256 }}"
             printf 'flutter_version=%s\n' "$(flutter --version | sed -n '1p')"
           } > build/build-info.txt
 
