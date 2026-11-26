@@ -62,3 +62,6 @@ Implemented in the app: release-update checking, explicit user approval, APK SHA
 See the private source repository's `PRIVACY.md` for current text-processing and local-storage behavior.
 
 The first build workflow is at `.github/workflows/build-android.yml`.
+
+
+Routine pushes to `main` only build and upload a verification artifact; they never publish a GitHub Release. Release publication is an explicit manual workflow input and remains blocked until the persistent signing secrets are configured and validated.
