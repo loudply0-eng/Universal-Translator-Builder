@@ -81,6 +81,10 @@ jobs:
             echo "Dart SDK requirement for ML Kit 1.0.3 is missing" >&2
             exit 1
           }
+          grep -Fq 'package_info_plus: ^10.2.2' pubspec.yaml || {
+            echo "Package information dependency must support file_picker's win32 version" >&2
+            exit 1
+          }
 
       - name: Fetch and verify pinned Arabic OCR model and license
         run: python3 scripts/fetch_arabic_ocr_model.py
