@@ -393,7 +393,8 @@ jobs:
             printf 'application_id=%s\n' "com.loudply.universaltranslator.universal_translator"
             printf 'signing_mode=%s\n' "$(cat build/signing-mode.txt)"
             printf 'signing_certificate_sha256=%s\n' "${{ steps.verify_signing.outputs.certificate_sha256 }}"
-            printf 'arabic_ocr_model_upstream_commit=%s\n' "87416418657359cb625c412a48b6e1d6d41c29bd"
+            printf 'arabic_ocr_model_upstream_commit=%s\\n' "9ddc24e750eec0994223a9edc3fcb434a2244f3b"
+            printf 'arabic_ocr_license_upstream_commit=%s\\n' "87416418657359cb625c412a48b6e1d6d41c29bd"
             printf 'arabic_ocr_model_git_blob_sha1=%s\n' "4b687c7d54c86cf6219aebe781b47284fd5d41f0"
             printf 'flutter_version=%s\n' "$(flutter --version | sed -n '1p')"
           } > build/build-info.txt
