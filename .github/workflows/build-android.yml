@@ -49,6 +49,10 @@ jobs:
             echo "Automatic startup update checks are missing" >&2
             exit 1
           }
+          grep -Fq "if (kReleaseMode)" lib/main.dart || {
+            echo "Startup network checks must be limited to production builds" >&2
+            exit 1
+          }
           python3 - <<'PY'
           from pathlib import Path
           import re
