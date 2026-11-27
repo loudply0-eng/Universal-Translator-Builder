@@ -219,7 +219,7 @@ jobs:
             exit 1
           fi
           TAG="v$APP_VERSION"
-          if gh release view "$TAG" >/dev/null 2>&1; then
+          if gh release view "$TAG" --repo loudply0-eng/Universal-Translator-Builder >/dev/null 2>&1; then
             echo "Release $TAG already exists. Increase the app version before publishing again." >&2
             exit 1
           fi
@@ -252,6 +252,7 @@ jobs:
           PY
 
           gh release create "$TAG" universal-translator.apk universal-translator.apk.sha256 \
+            --repo loudply0-eng/Universal-Translator-Builder \
             --target "$GITHUB_SHA" \
             --title "Universal Translator $APP_VERSION" \
             --notes-file "$NOTES_FILE"
