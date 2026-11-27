@@ -2,7 +2,7 @@ name: Builder and private-source security checks
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/0.3.3-screen-capture-permissions]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -58,10 +58,37 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           repository: loudply0-eng/Universal-Translator
-          ref: main
+          ref: ${{ github.ref_name == 'feature/0.3.3-screen-capture-permissions' && 'feature/0.3.3-unified-translation' || 'main' }}
           token: ${{ secrets.SOURCE_REPO_TOKEN }}
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Verify private source candidate version and aligned ML Kit dependencies
+        run: |
+          grep -Fq 'version: 0.3.3+7' pubspec.yaml || {
+            echo "Private source candidate must be version 0.3.3+7" >&2
+            exit 1
+          }
+          grep -Fq 'google_mlkit_translation: ^1.0.3' pubspec.yaml || {
+            echo "On-device translation dependency is missing" >&2
+            exit 1
+          }
+          grep -Fq 'google_mlkit_text_recognition: ^1.0.3' pubspec.yaml || {
+            echo "Text-recognition dependency is missing" >&2
+            exit 1
+          }
+          grep -Fq 'sdk: ">=3.12.0 <4.0.0"' pubspec.yaml || {
+            echo "Dart SDK requirement for ML Kit 1.0.3 is missing" >&2
+            exit 1
+          }
+          grep -Fq 'package_info_plus: ^10.2.2' pubspec.yaml || {
+            echo "Package information dependency must support file_picker's win32 version" >&2
+            exit 1
+          }
+          grep -Fq 'http.Response.bytes(' test/translation_service_test.dart || {
+            echo "Alternative translation UTF-8 test fixture is missing" >&2
+            exit 1
+          }
 
       - name: Fetch and verify pinned Arabic OCR model and license
         run: python3 scripts/fetch_arabic_ocr_model.py
