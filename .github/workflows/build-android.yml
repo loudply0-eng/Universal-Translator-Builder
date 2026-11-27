@@ -39,7 +39,7 @@ jobs:
         with:
           repository: loudply0-eng/Universal-Translator
           # Guarded push-trigger fallback: build the latest private source branch for the exact official-release marker.
-          ref: ${{ inputs.source_ref || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.3.2+6]') && 'main') || 'main' }}
+          ref: ${{ inputs.source_ref || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.3.3+7]') && 'main') || 'main' }}
           token: ${{ secrets.SOURCE_REPO_TOKEN }}
           path: source
           persist-credentials: false
@@ -99,6 +99,9 @@ jobs:
       - name: Generate Android platform project
         working-directory: source
         run: flutter create --platforms=android --org com.loudply.universaltranslator --project-name universal_translator .
+
+      - name: Configure Android text and image sharing
+        run: python3 scripts/configure_android_share_intents.py
 
       - name: Generate complete Android launcher icons
         working-directory: source
@@ -262,6 +265,18 @@ jobs:
             echo "Floating translation overlay service is missing" >&2
             exit 1
           }
+          grep -Fq 'android.intent.action.PROCESS_TEXT' android/app/src/main/AndroidManifest.xml || {
+            echo "Android text-selection translation intent is missing" >&2
+            exit 1
+          }
+          grep -Fq 'android.intent.action.SEND' android/app/src/main/AndroidManifest.xml || {
+            echo "Android sharing integration is missing" >&2
+            exit 1
+          }
+          grep -Fq 'shared_content' android/app/src/main/kotlin/com/loudply/universaltranslator/universal_translator/MainActivity.kt || {
+            echo "Android shared-content bridge is missing" >&2
+            exit 1
+          }
 
       - name: Resolve dependencies
         working-directory: source
@@ -395,7 +410,7 @@ jobs:
           retention-days: 14
 
       - name: Publish signed GitHub Release for in-app updates
-        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.publish_release == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.3.2+6]')) }}
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.publish_release == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.3.3+7]')) }}
         working-directory: source
         env:
           GH_TOKEN: ${{ github.token }}
