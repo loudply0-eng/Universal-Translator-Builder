@@ -177,7 +177,7 @@ jobs:
           additions = []
           for dep in dependencies:
               coordinate = re.escape(dep)
-              if not re.search(r'\\bimplementation\\s*\\(?\\s*["\\']' + coordinate + r'["\\']\\s*\\)?', dependency_body):
+              if not re.search(r"implementation\s*\(?\s*['\"]" + coordinate + r"['\"]\s*\)?", dependency_body):
                   if kotlin_dsl:
                       additions.append(f'    implementation("{dep}")')
                   else:
@@ -188,7 +188,7 @@ jobs:
 
           for dep in dependencies:
               coordinate = re.escape(dep)
-              if not re.search(r'\\bimplementation\\s*\\(?\\s*["\\']' + coordinate + r'["\\']\\s*\\)?', content):
+              if not re.search(r"implementation\s*\(?\s*['\"]" + coordinate + r"['\"]\s*\)?", content):
                   raise SystemExit(f"Required ML Kit runtime dependency was not added: {dep}")
               print(f"Verified app runtime dependency: {dep}")
 
