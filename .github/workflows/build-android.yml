@@ -225,7 +225,33 @@ jobs:
           fi
           cp build/app/outputs/flutter-apk/app-release.apk universal-translator.apk
           sha256sum universal-translator.apk > universal-translator.apk.sha256
+
+          NOTES_FILE="$(mktemp)"
+          python3 - "$APP_VERSION" CHANGELOG.md "$NOTES_FILE" <<'PY'
+          from pathlib import Path
+          import sys
+
+          version, changelog_path, output_path = sys.argv[1:]
+          lines = Path(changelog_path).read_text(encoding="utf-8").splitlines()
+          heading = f"## {version}"
+          try:
+              start = next(i for i, line in enumerate(lines) if line.strip() == heading)
+          except StopIteration:
+              raise SystemExit(f"Missing release notes section: {heading}")
+          end = next(
+              (i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")),
+              len(lines),
+          )
+          notes = "\n".join(lines[start + 1:end]).strip()
+          if not notes:
+              raise SystemExit(f"Release notes section is empty: {heading}")
+          Path(output_path).write_text(
+              notes + "\n\n---\nSigned APK. SHA-256 is checked by the app before Android's installer is opened. Android requires the user's confirmation.\n",
+              encoding="utf-8",
+          )
+          PY
+
           gh release create "$TAG" universal-translator.apk universal-translator.apk.sha256 \
             --target "$GITHUB_SHA" \
             --title "Universal Translator $APP_VERSION" \
-            --notes "Signed Universal Translator Android release. The app verifies the APK SHA-256 before handing it to Android's package installer. Android checks the signing certificate and requests user confirmation."
+            --notes-file "$NOTES_FILE"
