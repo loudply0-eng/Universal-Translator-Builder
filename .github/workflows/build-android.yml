@@ -52,7 +52,14 @@ jobs:
           match = re.search(r"^version:[ ]*([0-9]+[.][0-9]+[.][0-9]+[+][0-9]+)[ ]*$", content, re.M)
           if not match:
               raise SystemExit("pubspec.yaml version must use MAJOR.MINOR.PATCH+BUILD")
-          print(f"Application version: {match.group(1)}")
+          version = match.group(1)
+          print(f"Application version: {version}")
+          changelog = Path("CHANGELOG.md")
+          if not changelog.is_file():
+              raise SystemExit("CHANGELOG.md is required for every release")
+          if f"## {version}" not in changelog.read_text(encoding="utf-8").splitlines():
+              raise SystemExit(f"CHANGELOG.md is missing section ## {version}")
+          print(f"Release notes found for {version}")
           PY
 
       - name: Set up Flutter
