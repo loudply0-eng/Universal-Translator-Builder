@@ -85,6 +85,10 @@ jobs:
             echo "Package information dependency must support file_picker's win32 version" >&2
             exit 1
           }
+          grep -Fq 'http.Response.bytes(' test/translation_service_test.dart || {
+            echo "Alternative translation UTF-8 test fixture is missing" >&2
+            exit 1
+          }
 
       - name: Fetch and verify pinned Arabic OCR model and license
         run: python3 scripts/fetch_arabic_ocr_model.py
