@@ -74,7 +74,7 @@ jobs:
           license_bytes = license_file.read_bytes()
           expected_license_blob = "d645695673349e3947e8e5ae42332d0ac3164cd7"
           actual_license_blob = hashlib.sha1(
-              b"blob " + str(len(license_bytes)).encode("ascii") + b"\\0" + license_bytes
+              b"blob " + str(len(license_bytes)).encode("ascii") + b"\0" + license_bytes
           ).hexdigest()
           if actual_license_blob != expected_license_blob:
               raise SystemExit("Tesseract Apache-2.0 license failed its pinned upstream Git blob check")
