@@ -63,6 +63,9 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Fetch and verify pinned Arabic OCR model and license
+        run: python3 scripts/fetch_arabic_ocr_model.py
+
       - name: Scan private source history for leaked secrets
         uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3
         env:
