@@ -157,17 +157,41 @@ jobs:
           if gradle_kts.is_file():
               gradle = gradle_kts
               content = gradle.read_text(encoding="utf-8")
-              additions = "\n".join(f'    implementation("{dep}")' for dep in dependencies)
+              kotlin_dsl = True
           elif gradle_groovy.is_file():
               gradle = gradle_groovy
               content = gradle.read_text(encoding="utf-8")
-              additions = "\n".join(f"    implementation '{dep}'" for dep in dependencies)
+              kotlin_dsl = False
           else:
               raise SystemExit("Could not locate Android app Gradle build file")
+
+          marker = "dependencies {"
+          if marker not in content:
+              content = content.rstrip() + "\n\n" + marker + "\n}\n"
+          opening = content.index(marker) + len(marker)
+          closing = content.find("\n}", opening)
+          if closing < 0:
+              raise SystemExit("Could not locate the closing brace of the app dependencies block")
+          dependency_body = content[opening:closing]
+
+          additions = []
           for dep in dependencies:
-              if dep.split(":")[1] not in content:
-                  content = content.replace("dependencies {", "dependencies {\n" + additions + "\n", 1)
-                  break
+              coordinate = re.escape(dep)
+              if not re.search(r'\\bimplementation\\s*\\(?\\s*["\\']' + coordinate + r'["\\']\\s*\\)?', dependency_body):
+                  if kotlin_dsl:
+                      additions.append(f'    implementation("{dep}")')
+                  else:
+                      additions.append(f"    implementation '{dep}'")
+
+          if additions:
+              content = content[:opening] + "\n" + "\n".join(additions) + content[opening:]
+
+          for dep in dependencies:
+              coordinate = re.escape(dep)
+              if not re.search(r'\\bimplementation\\s*\\(?\\s*["\\']' + coordinate + r'["\\']\\s*\\)?', content):
+                  raise SystemExit(f"Required ML Kit runtime dependency was not added: {dep}")
+              print(f"Verified app runtime dependency: {dep}")
+
           gradle.write_text(content, encoding="utf-8")
           PY
 
