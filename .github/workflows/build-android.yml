@@ -99,11 +99,20 @@ jobs:
           permissions = [
               '    <uses-permission android:name="android.permission.INTERNET" />',
               '    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />',
+              '    <uses-permission android:name="android.permission.RECORD_AUDIO" />',
           ]
           for permission in permissions:
               permission_name = permission.split('"')[1]
               if permission_name not in content:
                   content = content.replace("<application", permission + "\n    <application", 1)
+          queries = """    <queries>
+                  <intent>
+                      <action android:name="android.speech.RecognitionService" />
+                  </intent>
+              </queries>
+          """
+          if "android.speech.RecognitionService" not in content:
+              content = content.replace("<application", queries + "\n    <application", 1)
           manifest.write_text(content, encoding="utf-8")
           PY
 
@@ -116,6 +125,14 @@ jobs:
           }
           grep -Fq 'android.permission.REQUEST_INSTALL_PACKAGES' android/app/src/main/AndroidManifest.xml || {
             echo "Android package installer permission is missing" >&2
+            exit 1
+          }
+          grep -Fq 'android.permission.RECORD_AUDIO' android/app/src/main/AndroidManifest.xml || {
+            echo "Android microphone permission is missing" >&2
+            exit 1
+          }
+          grep -Fq 'android.speech.RecognitionService' android/app/src/main/AndroidManifest.xml || {
+            echo "Android speech recognition query is missing" >&2
             exit 1
           }
 
