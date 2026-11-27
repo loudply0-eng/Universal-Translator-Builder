@@ -1,70 +1,61 @@
 # Universal Translator Builder
 
-Public automation repository for building and publishing Universal Translator Android releases.
+Public automation repository for building, verifying, and publishing signed Android releases of Universal Translator.
 
-The application source is maintained privately in [Universal-Translator](https://github.com/loudply0-eng/Universal-Translator).
+The application source is maintained privately in [Universal-Translator](https://github.com/loudply0-eng/Universal-Translator). This repository checks out that source, prepares the Android project, runs Flutter analysis and tests, builds the APK, verifies the persistent release signature, generates SHA-256 metadata, and publishes the official release when explicitly marked.
 
-## One-time connection to the private source
+## Current version
 
-Create a **fine-grained personal access token** in GitHub:
-1. Open GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens.
-2. Set the resource owner to `loudply0-eng`.
-3. Grant access to **only** `Universal-Translator`.
-4. Under Repository permissions, set **Contents: Read-only**.
-5. Generate the token, then open this public repository's Settings → Secrets and variables → Actions → New repository secret.
-6. Set the secret name to `SOURCE_REPO_TOKEN` and paste the token as its value. Never put it in a file or message.
+- Private source candidate: **0.3.4+8**
+- Latest published official release before this build: **0.3.3+7**
+- Android application package: `com.loudply.universaltranslator.universal_translator`
+- Official release APK name: `universal-translator.apk`
 
-Then open Actions → **Build Universal Translator APK** → Run workflow. The workflow checks out the private source, generates the Android platform folder, declares and verifies network/package-installer permissions, runs analysis/tests, and uploads the APK, checksum, and source/build manifest as a workflow artifact.
+## Application capabilities
 
-## One-time Android production signing
+The current private source includes:
 
-The release workflow now requires the persistent production signing secrets. It intentionally fails rather than producing a temporary-key APK if those secrets are missing.
+- Arabic-first right-to-left interface with 49 manually selectable languages and online translation through MyMemory.
+- Offline translation using downloadable Google ML Kit language models.
+- Android text selection and share-sheet support for text, screenshots, and images.
+- On-device OCR: bundled Arabic Tesseract model and ML Kit for supported other scripts.
+- Searchable PDF, DOCX, TXT, and Markdown document extraction and translation.
+- Two-person bilingual conversation mode with speech recognition and spoken translations.
+- Continuous speech translation for lectures and meetings, with a copyable transcript.
+- Draggable and resizable floating translation window.
+- Android screen sharing through the system MediaProjection consent dialog, with live preview and user-triggered frame capture for OCR. Extracted text can be translated online or offline and displayed in the floating window.
+- Local phrasebook, flashcard review, favorites, translation history, and appearance preferences.
+- In-app update checks with Arabic release notes, percentage and byte progress, resumable downloads, automatic retries, and SHA-256 verification before Android's installer is opened.
 
-The persistent JKS key has been generated on the Oracle server and all four Actions secrets have been uploaded. A signed APK has been built and its SHA-256 certificate fingerprint has been verified. The setup script below is retained for secure recovery/new environments; do not run it again on top of an existing key:
+Screen sharing is started only after the user approves Android's system prompt. Android displays a foreground-service notification while sharing. The user chooses when to capture a frame; the app does not silently read other apps or continuously translate screen contents. Secure or DRM-protected content may not be capturable.
 
-```bash
-bash scripts/setup-android-signing.sh
-```
+See the private source repository's `PRIVACY.md` for data-handling details.
 
-The script creates a persistent JKS keystore locally and uploads these four secrets to this repository without printing their values:
-- `ANDROID_KEYSTORE_BASE64`
-- `ANDROID_KEYSTORE_PASSWORD`
-- `ANDROID_KEY_ALIAS`
-- `ANDROID_KEY_PASSWORD`
+## Private-source connection
 
-It refuses to overwrite an existing keystore. Back up `universal-translator-release.jks` and its password securely in more than one place. Losing either means future APKs cannot be signed as compatible updates. Never commit, email, or paste the keystore or passwords into chat.
+The build workflow uses a fine-grained, read-only GitHub token to check out the private source. The token must be stored only as the `SOURCE_REPO_TOKEN` repository Actions secret. It must be scoped to the single private `Universal-Translator` repository with Contents: Read-only permission. Never place the token in source files, workflow logs, or chat messages.
 
-After the secrets are present, open Actions → **Build Universal Translator APK** → Run workflow. Keep `publish_release` disabled for a test build. To publish a production update, first increment `version` in the private source `pubspec.yaml` (format `MAJOR.MINOR.PATCH+BUILD`), then run the workflow with `publish_release` enabled. The workflow refuses to publish if persistent signing is unavailable or that version's release tag already exists.
+## Persistent Android release signing
 
-**Upgrade warning:** the earlier development APKs use temporary CI debug certificates. Android will not let a production-signed APK update one of those installs. Before moving to the first persistent-key release, uninstall the development build and install the signed release; local app data may be removed.
+Production APKs are signed with a persistent JKS keystore. The keystore and its passwords remain in the Oracle backup and GitHub Actions secrets; they must never be committed to this repository.
 
-## Release security
-- Keep the source repository private.
-- Keep the source token read-only and scoped to the one private repository.
-- Release signing keys and passwords must be stored only as Actions secrets.
-- Publish signed, versioned releases for in-app update checks.
-- Android requires the user to confirm installation of an update on ordinary non-rooted devices.
+The workflow refuses to publish when persistent signing is unavailable. It verifies the signing certificate before upload, computes the APK SHA-256 digest, and publishes both the APK and checksum.
 
-## Current application capabilities
+**Upgrade warning:** development APKs signed with temporary CI keys cannot be updated in place by the production-signed release. Users on such builds must uninstall the development build and install the first production-signed APK. Local app data may be removed.
 
-The private application currently includes:
-- Arabic-first text translation through a provider interface, currently backed by the MyMemory HTTPS API.
-- On-device source-language detection before sending translation requests.
-- Local translation history and favorites, stored on the device (up to 100 records).
-- Persistent device-local source and target language preferences.
-- A history privacy switch to stop saving new records and disable cache reuse without deleting existing records.
-- Exact-match local translation cache to reuse saved results and reduce repeat API usage.
-- Provider-injection contract tests plus automated Flutter analysis and unit/widget tests before an APK is uploaded.
-- Each build artifact includes a SHA-256 checksum and a build manifest recording the exact private-source commit.
+## Build and release procedure
 
-Implemented in the app: release-update checking, explicit user approval, APK SHA-256 verification, and Android installer handoff. Persistent production signing is configured, and the current signed candidate has passed APK signature verification. The first signed GitHub Release containing `universal-translator.apk` and its SHA-256 digest has not yet been published. Voice translation, OCR/screen capture, and floating translation overlay are also not implemented.
+Every push to `main` runs the build and security workflows. A routine push creates a verification artifact but does not publish a release.
 
-See the private source repository's `PRIVACY.md` for current text-processing and local-storage behavior.
+To publish an official release:
 
-The first build workflow is at `.github/workflows/build-android.yml`.
+1. Increment the version in the private source `pubspec.yaml` using `MAJOR.MINOR.PATCH+BUILD`.
+2. Add a matching Arabic-only section to the top of the private source `CHANGELOG.md`.
+3. Update the exact official-release marker in `.github/workflows/build-android.yml`.
+4. Commit the builder change to `main` with a message containing the exact marker, for example `[official-release:v0.3.4+8]`.
 
+The release workflow then checks out the private source, runs analysis and tests, builds and verifies the APK, creates its checksum and build manifest, and publishes the signed GitHub Release. The application updater checks this public Builder repository for the latest release.
 
-Routine pushes to `main` only build and upload a signed verification artifact; they never publish a GitHub Release. Release publication is an explicit manual workflow input (`publish_release=true`) and requires a version not already used by a GitHub Release.
+## Security checks
 
-
-Before each release, the workflow requires a matching version heading in the private source CHANGELOG.md and publishes that section as the GitHub Release notes. Release operations explicitly target this public Builder repository, which is also the repository polled by the app's updater.
+The security workflow scans builder and private-source Git history for leaked secrets, checks dependencies for known vulnerabilities, runs Flutter analysis, and executes the test suite. Private-source credentials are not exposed to pull-request workflows.
