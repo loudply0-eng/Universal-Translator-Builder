@@ -2,7 +2,7 @@ name: Builder and private-source security checks
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/0.3.3-screen-capture-permissions]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -58,7 +58,7 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           repository: loudply0-eng/Universal-Translator
-          ref: main
+          ref: ${{ github.ref_name == 'feature/0.3.3-screen-capture-permissions' && 'feature/0.3.3-unified-translation' || 'main' }}
           token: ${{ secrets.SOURCE_REPO_TOKEN }}
           fetch-depth: 0
           persist-credentials: false
