@@ -63,6 +63,21 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Verify private source candidate version and aligned ML Kit dependencies
+        run: |
+          grep -Fq 'version: 0.3.3+7' pubspec.yaml || {
+            echo "Private source candidate must be version 0.3.3+7" >&2
+            exit 1
+          }
+          grep -Fq 'google_mlkit_translation: ^1.0.3' pubspec.yaml || {
+            echo "On-device translation dependency is missing" >&2
+            exit 1
+          }
+          grep -Fq 'google_mlkit_text_recognition: ^1.0.3' pubspec.yaml || {
+            echo "Text-recognition dependency is missing" >&2
+            exit 1
+          }
+
       - name: Fetch and verify pinned Arabic OCR model and license
         run: python3 scripts/fetch_arabic_ocr_model.py
 
