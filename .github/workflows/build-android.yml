@@ -297,6 +297,37 @@ jobs:
             exit 1
           fi
 
+          python3 - "$APK" <<'PY'
+          from pathlib import Path
+          import hashlib
+          import sys
+          import zipfile
+
+          apk = Path(sys.argv[1])
+          expected = {
+              "assets/flutter_assets/assets/tessdata/ara.traineddata": (
+                  1432056, "c8d129c67821c1592cac46836686b057ecc203dc"
+              ),
+              "assets/flutter_assets/assets/tessdata/LICENSE-APACHE-2.0.txt": (
+                  None, "d645695673349e3947e8e5ae42332d0ac3164cd7"
+              ),
+          }
+          with zipfile.ZipFile(apk) as archive:
+              names = set(archive.namelist())
+              for name, (expected_size, expected_blob) in expected.items():
+                  if name not in names:
+                      raise SystemExit(f"Required OCR asset is missing from APK: {name}")
+                  data = archive.read(name)
+                  if expected_size is not None and len(data) != expected_size:
+                      raise SystemExit(f"Unexpected OCR asset size in APK: {name}")
+                  actual_blob = hashlib.sha1(
+                      b"blob " + str(len(data)).encode("ascii") + b"\\0" + data
+                  ).hexdigest()
+                  if actual_blob != expected_blob:
+                      raise SystemExit(f"Packaged OCR asset failed integrity verification: {name}")
+                  print(f"Verified APK asset: {name} ({len(data)} bytes)")
+          PY
+
           echo "certificate_sha256=$ACTUAL_CERT_SHA256" >> "$GITHUB_OUTPUT"
           echo "Verified fixed application ID and persistent signing certificate."
 
@@ -319,6 +350,8 @@ jobs:
             printf 'application_id=%s\n' "com.loudply.universaltranslator.universal_translator"
             printf 'signing_mode=%s\n' "$(cat build/signing-mode.txt)"
             printf 'signing_certificate_sha256=%s\n' "${{ steps.verify_signing.outputs.certificate_sha256 }}"
+            printf 'arabic_ocr_model_upstream_commit=%s\n' "87416418657359cb625c412a48b6e1d6d41c29bd"
+            printf 'arabic_ocr_model_git_blob_sha1=%s\n' "c8d129c67821c1592cac46836686b057ecc203dc"
             printf 'flutter_version=%s\n' "$(flutter --version | sed -n '1p')"
           } > build/build-info.txt
 
