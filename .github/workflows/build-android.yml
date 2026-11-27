@@ -38,7 +38,8 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           repository: loudply0-eng/Universal-Translator
-          ref: ${{ inputs.source_ref || 'main' }}
+          # Guarded push-trigger fallback: build this private branch only for the exact official-release marker.
+          ref: ${{ inputs.source_ref || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.3.0+4]') && 'feature/0.3.0-voice-ocr-auto-translate') || 'main' }}
           token: ${{ secrets.SOURCE_REPO_TOKEN }}
           path: source
           persist-credentials: false
@@ -293,7 +294,7 @@ jobs:
           retention-days: 14
 
       - name: Publish signed GitHub Release for in-app updates
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_release == true }}
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.publish_release == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.3.0+4]')) }}
         working-directory: source
         env:
           GH_TOKEN: ${{ github.token }}
