@@ -321,7 +321,7 @@ jobs:
                   if expected_size is not None and len(data) != expected_size:
                       raise SystemExit(f"Unexpected OCR asset size in APK: {name}")
                   actual_blob = hashlib.sha1(
-                      b"blob " + str(len(data)).encode("ascii") + b"\\0" + data
+                      b"blob " + str(len(data)).encode("ascii") + b"\0" + data
                   ).hexdigest()
                   if actual_blob != expected_blob:
                       raise SystemExit(f"Packaged OCR asset failed integrity verification: {name}")
