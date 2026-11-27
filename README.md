@@ -27,7 +27,7 @@ The current private source includes:
 - Local phrasebook, flashcard review, favorites, translation history, and appearance preferences.
 - In-app update checks with Arabic release notes, percentage and byte progress, resumable downloads, automatic retries, and SHA-256 verification before Android's installer is opened.
 
-Screen sharing is started only after the user approves Android's system prompt. Android displays a foreground-service notification while sharing. The user chooses when to capture a frame; the app does not silently read other apps or continuously translate screen contents. Secure or DRM-protected content may not be capturable.
+Screen sharing is started only after the user approves Android's system prompt. Android displays a foreground-service notification while sharing. The user chooses when to capture a frame; the app does not silently read other apps or continuously translate screen contents. The temporary capture frame is deleted after on-device OCR finishes. Secure or DRM-protected content may not be capturable.
 
 See the private source repository's `PRIVACY.md` for data-handling details.
 
