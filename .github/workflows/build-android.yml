@@ -8,6 +8,11 @@ name: Build Universal Translator APK
         required: false
         default: false
         type: boolean
+      source_ref:
+        description: "Private source branch or tag to build (defaults to main)."
+        required: false
+        default: main
+        type: string
   push:
     branches:
       - main
@@ -33,7 +38,7 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           repository: loudply0-eng/Universal-Translator
-          ref: main
+          ref: ${{ inputs.source_ref || 'main' }}
           token: ${{ secrets.SOURCE_REPO_TOKEN }}
           path: source
           persist-credentials: false
@@ -100,6 +105,7 @@ jobs:
               '    <uses-permission android:name="android.permission.INTERNET" />',
               '    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />',
               '    <uses-permission android:name="android.permission.RECORD_AUDIO" />',
+              '    <uses-permission android:name="android.permission.CAMERA" />',
           ]
           for permission in permissions:
               permission_name = permission.split('"')[1]
@@ -129,6 +135,10 @@ jobs:
           }
           grep -Fq 'android.permission.RECORD_AUDIO' android/app/src/main/AndroidManifest.xml || {
             echo "Android microphone permission is missing" >&2
+            exit 1
+          }
+          grep -Fq 'android.permission.CAMERA' android/app/src/main/AndroidManifest.xml || {
+            echo "Android camera permission is missing" >&2
             exit 1
           }
           grep -Fq 'android.speech.RecognitionService' android/app/src/main/AndroidManifest.xml || {
