@@ -39,7 +39,7 @@ jobs:
         with:
           repository: loudply0-eng/Universal-Translator
           # Guarded push-trigger fallback: build the latest private source branch for the exact official-release marker.
-          ref: ${{ inputs.source_ref || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.3.1+5]') && 'main') || 'main' }}
+          ref: ${{ inputs.source_ref || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.3.2+6]') && 'main') || 'main' }}
           token: ${{ secrets.SOURCE_REPO_TOKEN }}
           path: source
           persist-credentials: false
@@ -145,6 +145,9 @@ jobs:
               '    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />',
               '    <uses-permission android:name="android.permission.RECORD_AUDIO" />',
               '    <uses-permission android:name="android.permission.CAMERA" />',
+              '    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />',
+              '    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />',
+              '    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />',
           ]
           for permission in permissions:
               permission_name = permission.split('"')[1]
@@ -158,6 +161,19 @@ jobs:
           """
           if "android.speech.RecognitionService" not in content:
               content = content.replace("<application", queries + "\n    <application", 1)
+
+          # Declare the foreground service used by the user-requested floating translation window.
+          overlay_service = """    <service
+                  android:name="flutter.overlay.window.flutter_overlay_window.OverlayService"
+                  android:exported="false"
+                  android:foregroundServiceType="specialUse">
+                  <property
+                      android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                      android:value="User-requested floating translation window" />
+              </service>
+          """
+          if "flutter.overlay.window.flutter_overlay_window.OverlayService" not in content:
+              content = content.replace("</application>", overlay_service + "\n</application>", 1)
           manifest.write_text(content, encoding="utf-8")
 
           # Bundle the optional ML Kit recognizers used for Chinese, Japanese,
@@ -232,6 +248,18 @@ jobs:
           }
           grep -Fq 'android.speech.RecognitionService' android/app/src/main/AndroidManifest.xml || {
             echo "Android speech recognition query is missing" >&2
+            exit 1
+          }
+          grep -Fq 'android.permission.SYSTEM_ALERT_WINDOW' android/app/src/main/AndroidManifest.xml || {
+            echo "Android overlay permission is missing" >&2
+            exit 1
+          }
+          grep -Fq 'android.permission.FOREGROUND_SERVICE_SPECIAL_USE' android/app/src/main/AndroidManifest.xml || {
+            echo "Android special-use foreground service permission is missing" >&2
+            exit 1
+          }
+          grep -Fq 'flutter.overlay.window.flutter_overlay_window.OverlayService' android/app/src/main/AndroidManifest.xml || {
+            echo "Floating translation overlay service is missing" >&2
             exit 1
           }
 
@@ -393,6 +421,7 @@ jobs:
           NOTES_FILE="$(mktemp)"
           python3 - "$APP_VERSION" CHANGELOG.md "$NOTES_FILE" <<'PY'
           from pathlib import Path
+          import re
           import sys
 
           version, changelog_path, output_path = sys.argv[1:]
@@ -409,8 +438,10 @@ jobs:
           notes = "\n".join(lines[start + 1:end]).strip()
           if not notes:
               raise SystemExit(f"Release notes section is empty: {heading}")
+          if re.search(r"[A-Za-z]{2,}", notes):
+              raise SystemExit("Release notes must be written entirely in Arabic.")
           Path(output_path).write_text(
-              notes + "\n\n---\nSigned APK. SHA-256 is checked by the app before Android's installer is opened. Android requires the user's confirmation.\n",
+              notes + "\n\n---\nتم فحص سلامة حزمة التثبيت قبل فتح مُثبّت النظام. يتطلب التثبيت موافقتك.\n",
               encoding="utf-8",
           )
           PY
