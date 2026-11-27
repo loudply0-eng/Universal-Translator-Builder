@@ -65,3 +65,6 @@ The first build workflow is at `.github/workflows/build-android.yml`.
 
 
 Routine pushes to `main` only build and upload a signed verification artifact; they never publish a GitHub Release. Release publication is an explicit manual workflow input (`publish_release=true`) and requires a version not already used by a GitHub Release.
+
+
+Before each release, the workflow requires a matching version heading in the private source CHANGELOG.md and publishes that section as the GitHub Release notes. Release operations explicitly target this public Builder repository, which is also the repository polled by the app's updater.
