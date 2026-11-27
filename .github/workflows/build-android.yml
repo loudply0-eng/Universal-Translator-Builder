@@ -85,6 +85,24 @@ jobs:
         working-directory: source
         run: flutter create --platforms=android --org com.loudply.universaltranslator --project-name universal_translator .
 
+      - name: Generate complete Android launcher icons
+        working-directory: source
+        run: |
+          python3 -m pip install --disable-pip-version-check cairosvg
+          python3 - <<'PY'
+          import cairosvg
+          cairosvg.svg2png(url="assets/launcher_icon.svg", write_to="assets/launcher_icon.png", output_width=1024, output_height=1024)
+          cairosvg.svg2png(url="assets/launcher_icon_foreground.svg", write_to="assets/launcher_icon_foreground.png", output_width=1024, output_height=1024)
+          PY
+          grep -Fq 'flutter_launcher_icons:' pubspec.yaml || {
+            echo "Launcher icon configuration is missing" >&2
+            exit 1
+          }
+          flutter pub get
+          dart run flutter_launcher_icons
+          test -s android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          test -s android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+
       - name: Configure persistent Android release signing
         id: signing
         env:
