@@ -2,60 +2,44 @@
 
 Public automation repository for building, verifying, and publishing signed Android releases of Universal Translator.
 
-The application source is maintained privately in [Universal-Translator](https://github.com/loudply0-eng/Universal-Translator). This repository checks out that source, prepares the Android project, runs Flutter analysis and tests, builds the APK, verifies the persistent release signature, generates SHA-256 metadata, and publishes the official release when explicitly marked.
+The application source is maintained privately in [Universal-Translator](https://github.com/loudply0-eng/Universal-Translator). This repository checks out that source, prepares Android files, runs Flutter analysis and tests, builds the APK, verifies its production signature and bundled OCR assets, and publishes the official release when the exact version marker is present.
 
-## Current version
+## Current candidate
 
-- Private source candidate: **0.3.4+8**
-- Latest published official release before this build: **0.3.3+7**
-- Android application package: `com.loudply.universaltranslator.universal_translator`
-- Official release APK name: `universal-translator.apk`
+- Source version: **0.3.5+9**
+- Previous official release: **0.3.4+8**
+- Application ID: `com.loudply.universaltranslator.universal_translator`
+- Published APK: `universal-translator.apk`
 
-## Application capabilities
+## Current features
 
-The current private source includes:
+- Arabic-first translation with online and on-device offline modes.
+- 49 online language choices, voice input and spoken translation.
+- Live lecture translation with independent speaker and target language selectors, plus optional automatic spoken output.
+- Compact, adjustable screen preview with user-approved Android MediaProjection capture.
+- Local OCR with an accuracy-focused Arabic Tesseract model, image orientation correction, enlargement, contrast tuning, and editable text review.
+- Translation of searchable PDF, DOCX, TXT and Markdown documents.
+- Two-person conversation, phrasebook, history, favorites and floating translation overlay.
+- Image export that preserves the original picture and adds a translated-text panel; it is shared only after the user presses the share action.
+- Arabic release notes, resumable update downloads, SHA-256 verification, and explicit Android installer confirmation.
 
-- Arabic-first right-to-left interface with 49 manually selectable languages and online translation through MyMemory.
-- Offline translation using downloadable Google ML Kit language models.
-- Android text selection and share-sheet support for text, screenshots, and images.
-- On-device OCR: bundled Arabic Tesseract model and ML Kit for supported other scripts.
-- Searchable PDF, DOCX, TXT, and Markdown document extraction and translation.
-- Two-person bilingual conversation mode with speech recognition and spoken translations.
-- Continuous speech translation for lectures and meetings, with a copyable transcript.
-- Draggable and resizable floating translation window.
-- Android screen sharing through the system MediaProjection consent dialog, with live preview and user-triggered frame capture for OCR. Extracted text can be translated online or offline and displayed in the floating window.
-- Local phrasebook, flashcard review, favorites, translation history, and appearance preferences.
-- In-app update checks with Arabic release notes, percentage and byte progress, resumable downloads, automatic retries, and SHA-256 verification before Android's installer is opened.
+## OCR asset verification
 
-Screen sharing is started only after the user approves Android's system prompt. Android displays a foreground-service notification while sharing. The user chooses when to capture a frame; the app does not silently read other apps or continuously translate screen contents. The temporary capture frame is deleted after on-device OCR finishes. Secure or DRM-protected content may not be capturable.
+The Arabic OCR file is pinned to the Tesseract `tessdata_best` upstream Git blob. The workflow verifies its exact size and Git blob SHA-1 before building and verifies the packaged asset again inside the APK. The Apache-2.0 license is fetched from the separately pinned `tessdata_fast` license path because the best-model repository does not contain a license file at that revision.
 
-See the private source repository's `PRIVACY.md` for data-handling details.
+## Private source and secrets
 
-## Private-source connection
+The build workflow uses the `SOURCE_REPO_TOKEN` Actions secret to check out the private source. It must be a fine-grained, read-only token scoped only to the `Universal-Translator` repository.
 
-The build workflow uses a fine-grained, read-only GitHub token to check out the private source. The token must be stored only as the `SOURCE_REPO_TOKEN` repository Actions secret. It must be scoped to the single private `Universal-Translator` repository with Contents: Read-only permission. Never place the token in source files, workflow logs, or chat messages.
-
-## Persistent Android release signing
-
-Production APKs are signed with a persistent JKS keystore. The keystore and its passwords remain in the Oracle backup and GitHub Actions secrets; they must never be committed to this repository.
-
-The workflow refuses to publish when persistent signing is unavailable. It verifies the signing certificate before upload, computes the APK SHA-256 digest, and publishes both the APK and checksum.
-
-**Upgrade warning:** development APKs signed with temporary CI keys cannot be updated in place by the production-signed release. Users on such builds must uninstall the development build and install the first production-signed APK. Local app data may be removed.
+The persistent Android JKS keystore and its passwords remain exclusively in Actions secrets and the user's secure backups. Never commit or print the signing key, passwords, tokens, or Oracle credentials. The workflow refuses to publish if persistent signing is unavailable.
 
 ## Build and release procedure
 
-Every push to `main` runs the build and security workflows. A routine push creates a verification artifact but does not publish a release.
+Every push to `main` runs the build and security workflows. To publish an official release:
 
-To publish an official release:
+1. Increment `version` in the private source `pubspec.yaml`.
+2. Add a matching Arabic-only section at the top of the private source `CHANGELOG.md`.
+3. Update both exact release markers in `.github/workflows/build-android.yml`.
+4. Commit the builder change with a message containing the marker, for example `[official-release:v0.3.5+9]`.
 
-1. Increment the version in the private source `pubspec.yaml` using `MAJOR.MINOR.PATCH+BUILD`.
-2. Add a matching Arabic-only section to the top of the private source `CHANGELOG.md`.
-3. Update the exact official-release marker in `.github/workflows/build-android.yml`.
-4. Commit the builder change to `main` with a message containing the exact marker, for example `[official-release:v0.3.4+8]`.
-
-The release workflow then checks out the private source, runs analysis and tests, builds and verifies the APK, creates its checksum and build manifest, and publishes the signed GitHub Release. The application updater checks this public Builder repository for the latest release.
-
-## Security checks
-
-The security workflow scans builder and private-source Git history for leaked secrets, checks dependencies for known vulnerabilities, runs Flutter analysis, and executes the test suite. Private-source credentials are not exposed to pull-request workflows.
+The release workflow runs dependency resolution, Flutter analysis, tests, APK build, certificate verification, OCR asset checks, SHA-256 generation and release publication. The app's updater checks this public Builder repository.
