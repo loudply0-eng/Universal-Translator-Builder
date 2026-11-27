@@ -120,6 +120,32 @@ jobs:
           if "android.speech.RecognitionService" not in content:
               content = content.replace("<application", queries + "\n    <application", 1)
           manifest.write_text(content, encoding="utf-8")
+
+          # Bundle the optional ML Kit recognizers used for Chinese, Japanese,
+          # Korean, and Devanagari source-language OCR.
+          gradle_kts = Path("android/app/build.gradle.kts")
+          gradle_groovy = Path("android/app/build.gradle")
+          dependencies = [
+              "com.google.mlkit:text-recognition-chinese:16.0.1",
+              "com.google.mlkit:text-recognition-japanese:16.0.1",
+              "com.google.mlkit:text-recognition-korean:16.0.1",
+              "com.google.mlkit:text-recognition-devanagari:16.0.1",
+          ]
+          if gradle_kts.is_file():
+              gradle = gradle_kts
+              content = gradle.read_text(encoding="utf-8")
+              additions = "\\n".join(f'    implementation("{dep}")' for dep in dependencies)
+          elif gradle_groovy.is_file():
+              gradle = gradle_groovy
+              content = gradle.read_text(encoding="utf-8")
+              additions = "\\n".join(f"    implementation '{dep}'" for dep in dependencies)
+          else:
+              raise SystemExit("Could not locate Android app Gradle build file")
+          for dep in dependencies:
+              if dep.split(":")[1] not in content:
+                  content = content.replace("dependencies {", "dependencies {\\n" + additions + "\\n", 1)
+                  break
+          gradle.write_text(content, encoding="utf-8")
           PY
 
       - name: Verify Android network permission
