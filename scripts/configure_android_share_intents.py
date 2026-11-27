@@ -45,8 +45,8 @@ class MainActivity : FlutterActivity() {
     private var pendingSharedContent: Map<String, Any> = emptyMap()
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        pendingSharedContent = extractSharedContent(intent)
         super.onCreate(savedInstanceState)
+        pendingSharedContent = extractSharedContent(intent)
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
