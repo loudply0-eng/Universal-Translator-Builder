@@ -66,7 +66,7 @@ jobs:
       - name: Verify private source candidate version and aligned ML Kit dependencies
         run: |
           grep -Fq 'version: 0.3.5+9' pubspec.yaml || {
-            echo "Private source candidate must be version 0.3.4+8" >&2
+            echo "Private source candidate must be version 0.3.5+9" >&2
             exit 1
           }
           grep -Fq 'google_mlkit_translation: ^1.0.3' pubspec.yaml || {
