@@ -349,7 +349,7 @@ jobs:
           apk = Path(sys.argv[1])
           expected = {
               "assets/flutter_assets/assets/tessdata/ara.traineddata": (
-                  1432056, "c8d129c67821c1592cac46836686b057ecc203dc"
+                  12603724, "4b687c7d54c86cf6219aebe781b47284fd5d41f0"
               ),
               "assets/flutter_assets/assets/tessdata/LICENSE-APACHE-2.0.txt": (
                   None, "d645695673349e3947e8e5ae42332d0ac3164cd7"
