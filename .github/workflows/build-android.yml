@@ -39,10 +39,40 @@ jobs:
         with:
           repository: loudply0-eng/Universal-Translator
           # Guarded push-trigger fallback: build the latest private source branch for the exact official-release marker.
-          ref: ${{ inputs.source_ref || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.3.0+4]') && 'feature/0.3.0-voice-ocr-auto-translate') || 'main' }}
+          ref: ${{ inputs.source_ref || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.3.1+5]') && 'main') || 'main' }}
           token: ${{ secrets.SOURCE_REPO_TOKEN }}
           path: source
           persist-credentials: false
+
+      - name: Fetch pinned Arabic OCR model
+        working-directory: source
+        run: |
+          set -euo pipefail
+          mkdir -p assets/tessdata
+          MODEL_COMMIT="87416418657359cb625c412a48b6e1d6d41c29bd"
+          MODEL_URL="https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/${MODEL_COMMIT}/ara.traineddata"
+          LICENSE_URL="https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/${MODEL_COMMIT}/LICENSE"
+          curl --fail --location --retry 3 --retry-all-errors "$MODEL_URL" -o assets/tessdata/ara.traineddata
+          curl --fail --location --retry 3 --retry-all-errors "$LICENSE_URL" -o assets/tessdata/LICENSE-APACHE-2.0.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+
+          model = Path("assets/tessdata/ara.traineddata").read_bytes()
+          expected_size = 1432056
+          expected_git_blob = "c8d129c67821c1592cac46836686b057ecc203dc"
+          actual_git_blob = hashlib.sha1(
+              b"blob " + str(len(model)).encode("ascii") + b"\\0" + model
+          ).hexdigest()
+          if len(model) != expected_size:
+              raise SystemExit(f"Arabic OCR model size mismatch: {len(model)}")
+          if actual_git_blob != expected_git_blob:
+              raise SystemExit("Arabic OCR model failed its pinned upstream Git blob check")
+          license_file = Path("assets/tessdata/LICENSE-APACHE-2.0.txt")
+          if not license_file.is_file() or license_file.stat().st_size < 10000:
+              raise SystemExit("Tesseract Apache-2.0 license file is missing or incomplete")
+          print(f"Verified pinned Arabic OCR model ({len(model)} bytes; Git blob {actual_git_blob}).")
+          PY
 
       - name: Verify in-app updater source and release version
         working-directory: source
@@ -57,6 +87,16 @@ jobs:
           }
           grep -Fq "if (kReleaseMode)" lib/main.dart || {
             echo "Startup network checks must be limited to production builds" >&2
+            exit 1
+          }
+          grep -Fq "tesseract_ocr: ^0.6.0" pubspec.yaml || {
+            echo "Arabic Tesseract OCR dependency is missing" >&2
+            exit 1
+          }
+          test -s assets/tessdata_config.json
+          test -s assets/tessdata/ara.traineddata
+          grep -Fq '"ara.traineddata"' assets/tessdata_config.json || {
+            echo "Arabic OCR trained-data asset is not declared" >&2
             exit 1
           }
           python3 - <<'PY'
@@ -320,7 +360,7 @@ jobs:
           retention-days: 14
 
       - name: Publish signed GitHub Release for in-app updates
-        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.publish_release == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.3.0+4]')) }}
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.publish_release == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.3.1+5]')) }}
         working-directory: source
         env:
           GH_TOKEN: ${{ github.token }}
