@@ -45,6 +45,10 @@ jobs:
             echo "The in-app update version checker is missing" >&2
             exit 1
           }
+          grep -Fq "showNoUpdateMessage" lib/main.dart || {
+            echo "Automatic startup update checks are missing" >&2
+            exit 1
+          }
           python3 - <<'PY'
           from pathlib import Path
           import re
