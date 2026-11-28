@@ -66,6 +66,7 @@ jobs:
             echo "Startup network checks must be limited to production builds" >&2
             exit 1
           }
+          # The updater is deliberately uncapped and must compile with the streamed byte counter.
           grep -Fq 'expectedSize: expectedSize' lib/services/update_service.dart || {
             echo "Updater must read the published APK size before downloading" >&2
             exit 1
