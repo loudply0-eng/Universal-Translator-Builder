@@ -18,7 +18,7 @@ name: Build Universal Translator APK
       - main
 
 # A push containing the official-release marker publishes the signed APK for in-app updates.
-# Release trigger marker: [official-release:v0.4.1+15] — build and publish the scanned-PDF OCR release after all checks pass.
+# Release trigger marker: [official-release:v0.5.0+16] — build and publish the scanned-PDF OCR release after all checks pass.
 
 permissions:
   contents: write
@@ -42,7 +42,7 @@ jobs:
         with:
           repository: loudply0-eng/Universal-Translator
           # Guarded push-trigger fallback: build the latest private source branch for the exact official-release marker.
-          ref: ${{ inputs.source_ref || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.4.1+15]') && 'main') || 'main' }}
+          ref: ${{ inputs.source_ref || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.5.0+16]') && 'main') || 'main' }}
           token: ${{ secrets.SOURCE_REPO_TOKEN }}
           path: source
           persist-credentials: false
@@ -137,6 +137,72 @@ jobs:
           }
           test -s test/pdf_document_text_extractor_test.dart || {
             echo "Scanned PDF OCR regression tests are missing" >&2
+            exit 1
+          }
+          grep -Fq 'TranslationEngineMode.automatic' lib/services/translation_service.dart || {
+            echo "Automatic translation engine routing is missing" >&2
+            exit 1
+          }
+          grep -Fq 'TranslationEngineMode.offlineOnly' lib/services/translation_service.dart || {
+            echo "Offline-only translation mode is missing" >&2
+            exit 1
+          }
+          grep -Fq '_offlineFallback' lib/services/translation_service.dart || {
+            echo "On-device fallback implementation is missing" >&2
+            exit 1
+          }
+          grep -Fq 'translationEngineMode' lib/services/app_preferences.dart || {
+            echo "Translation engine preference is not persisted" >&2
+            exit 1
+          }
+          grep -Fq 'TranslationEngineMode.automatic' lib/main.dart || {
+            echo "Main translation screen is not wired to smart routing" >&2
+            exit 1
+          }
+          test -s lib/services/translation_glossary.dart || {
+            echo "Personal translation glossary service is missing" >&2
+            exit 1
+          }
+          test -s lib/pages/translation_glossary_page.dart || {
+            echo "Personal translation glossary UI is missing" >&2
+            exit 1
+          }
+          grep -Fq 'glossaryStore: _glossaryStore' lib/main.dart || {
+            echo "Personal glossary is not wired into live translation requests" >&2
+            exit 1
+          }
+          grep -Fq 'ZXQGTERM' lib/services/translation_service.dart || {
+            echo "Glossary token-safe request splitting is missing" >&2
+            exit 1
+          }
+          test -s test/translation_glossary_test.dart
+          test -s test/translation_glossary_page_test.dart
+          grep -Fq 'automatic mode falls back to local translation' test/translation_service_test.dart || {
+            echo "Automatic translation fallback regression test is missing" >&2
+            exit 1
+          }
+          grep -Fq 'applies saved glossary terms during an actual translation request' test/translation_service_test.dart || {
+            echo "Glossary end-to-end regression test is missing" >&2
+            exit 1
+          }
+          test -s lib/services/subtitle_document.dart || {
+            echo "SRT/VTT subtitle parser and serializer are missing" >&2
+            exit 1
+          }
+          test -s test/subtitle_document_test.dart || {
+            echo "SRT/VTT timing preservation tests are missing" >&2
+            exit 1
+          }
+          grep -Fq 'SubtitleDocument.parse' lib/pages/document_translation_page.dart || {
+            echo "Document screen does not parse subtitle files" >&2
+            exit 1
+          }
+          grep -Fq 'translated.serialize()' lib/pages/document_translation_page.dart || {
+            echo "Translated subtitle output is not serialized for export" >&2
+            exit 1
+          }
+          grep -Fq "allowedExtensions: ['pdf', 'docx', 'txt', 'md', 'srt', 'vtt']" lib/pages/document_translation_page.dart || {
+            echo "Subtitle file selection is not enabled" >&2
             exit 1
           }
 
@@ -510,7 +576,7 @@ jobs:
           retention-days: 14
 
       - name: Publish signed GitHub Release for in-app updates
-        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.publish_release == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.4.1+15]')) }}
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.publish_release == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.5.0+16]')) }}
         working-directory: source
         env:
           GH_TOKEN: ${{ github.token }}
