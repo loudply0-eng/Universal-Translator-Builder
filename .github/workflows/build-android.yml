@@ -69,6 +69,24 @@ jobs:
             echo "Arabic Tesseract OCR dependency is missing" >&2
             exit 1
           }
+
+          test -s lib/services/arabic_dialect_service.dart
+          grep -Fq 'IraqiArabicDialect.apply' lib/services/translation_service.dart || {
+            echo "Iraqi Arabic localization is missing from online translations" >&2
+            exit 1
+          }
+          grep -Fq 'IraqiArabicDialect.apply' lib/services/offline_translation_service.dart || {
+            echo "Iraqi Arabic localization is missing from offline translations" >&2
+            exit 1
+          }
+          grep -Fq 'bool _speakAutomatically = true;' lib/pages/live_meeting_page.dart || {
+            echo "Automatic lecture speech must be enabled by default" >&2
+            exit 1
+          }
+          grep -Fq '_speechQueue = _speechQueue.then' lib/pages/live_meeting_page.dart || {
+            echo "Lecture speech queue is missing" >&2
+            exit 1
+          }
           test -s assets/tessdata_config.json
           test -s assets/tessdata/ara.traineddata
           grep -Fq '"ara.traineddata"' assets/tessdata_config.json || {
