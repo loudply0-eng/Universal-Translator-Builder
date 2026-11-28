@@ -18,7 +18,7 @@ name: Build Universal Translator APK
       - main
 
 # A push containing the official-release marker publishes the signed APK for in-app updates.
-# Release trigger marker: [official-release:v0.5.0+16] — verify engine selector test against the opened dropdown menu.
+# Release trigger marker: [official-release:v0.5.0+16] — rerun terminology persistence and translation integration tests.
 
 permissions:
   contents: write
