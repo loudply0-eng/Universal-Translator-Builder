@@ -65,8 +65,8 @@ jobs:
 
       - name: Verify private source candidate version and aligned ML Kit dependencies
         run: |
-          grep -Fq 'version: 0.4.1+15' pubspec.yaml || {
-            echo "Private source candidate must be version 0.4.1+15" >&2
+          grep -Fq 'version: 0.5.0+16' pubspec.yaml || {
+            echo "Private source candidate must be version 0.5.0+16" >&2
             exit 1
           }
           grep -Fq 'google_mlkit_translation: ^1.0.3' pubspec.yaml || {
@@ -111,6 +111,32 @@ jobs:
           }
           test -s test/pdf_document_text_extractor_test.dart || {
             echo "Scanned PDF OCR regression tests are missing" >&2
+            exit 1
+          }
+          grep -Fq 'TranslationEngineMode.automatic' lib/services/translation_service.dart || {
+            echo "Smart translation routing is missing" >&2
+            exit 1
+          }
+          grep -Fq '_offlineFallback' lib/services/translation_service.dart || {
+            echo "Offline fallback service is missing" >&2
+            exit 1
+          }
+          test -s test/translation_glossary_test.dart
+          test -s test/translation_glossary_page_test.dart
+          test -s lib/services/translation_glossary.dart
+          test -s lib/pages/translation_glossary_page.dart
+          test -s lib/services/subtitle_document.dart
+          test -s test/subtitle_document_test.dart
+          grep -Fq 'SubtitleDocument.parse' lib/pages/document_translation_page.dart || {
+            echo "Subtitle file parser integration is missing" >&2
+            exit 1
+          }
+          grep -Fq 'automatic mode falls back to local translation' test/translation_service_test.dart || {
+            echo "Offline routing regression tests are missing" >&2
+            exit 1
+          }
+          grep -Fq 'applies saved glossary terms during an actual translation request' test/translation_service_test.dart || {
+            echo "Glossary integration tests are missing" >&2
             exit 1
           }
           grep -Fq 'width: compactWidth' lib/services/translation_overlay_service.dart || {
