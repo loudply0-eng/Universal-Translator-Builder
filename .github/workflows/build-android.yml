@@ -654,3 +654,5 @@ jobs:
             --notes-file "$NOTES_FILE"
 
 # DOCX archive-preserving translation regression tests added to source 0.5.1+17.
+
+# DOCX archive replacement now uses Archive.removeFile/addFile for immutable ArchiveFile entries.
