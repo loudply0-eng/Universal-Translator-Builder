@@ -18,7 +18,7 @@ name: Build Universal Translator APK
       - main
 
 # A push containing the official-release marker publishes the signed APK for in-app updates.
-# Release trigger marker: [official-release:v0.3.8+12]
+# Release trigger marker: [official-release:v0.3.9+13]
 
 permissions:
   contents: write
@@ -42,7 +42,7 @@ jobs:
         with:
           repository: loudply0-eng/Universal-Translator
           # Guarded push-trigger fallback: build the latest private source branch for the exact official-release marker.
-          ref: ${{ inputs.source_ref || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.3.8+12]') && 'main') || 'main' }}
+          ref: ${{ inputs.source_ref || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.3.9+13]') && 'main') || 'main' }}
           token: ${{ secrets.SOURCE_REPO_TOKEN }}
           path: source
           persist-credentials: false
@@ -64,6 +64,26 @@ jobs:
           }
           grep -Fq "if (kReleaseMode)" lib/main.dart || {
             echo "Startup network checks must be limited to production builds" >&2
+            exit 1
+          }
+          grep -Fq 'expectedSize: expectedSize' lib/services/update_service.dart || {
+            echo "Updater must read the published APK size before downloading" >&2
+            exit 1
+          }
+          grep -Fq 'maxRedirects = 10' lib/services/update_service.dart || {
+            echo "Updater must follow GitHub release asset redirects" >&2
+            exit 1
+          }
+          grep -Fq 'Duration(minutes: 3)' lib/services/update_service.dart || {
+            echo "Updater must tolerate slow mobile connections" >&2
+            exit 1
+          }
+          if grep -Fq 'maximumApkBytes' lib/services/update_service.dart; then
+            echo "An artificial APK download size ceiling must not be reintroduced" >&2
+            exit 1
+          fi
+          grep -Fq 'shows the published APK size from the first progress update' test/update_service_test.dart || {
+            echo "Updater initial progress regression test is missing" >&2
             exit 1
           }
           grep -Fq "tesseract_ocr: ^0.6.0" pubspec.yaml || {
@@ -441,7 +461,7 @@ jobs:
           retention-days: 14
 
       - name: Publish signed GitHub Release for in-app updates
-        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.publish_release == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.3.8+12]')) }}
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.publish_release == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.3.9+13]')) }}
         working-directory: source
         env:
           GH_TOKEN: ${{ github.token }}
