@@ -41,7 +41,7 @@ jobs:
         with:
           repository: loudply0-eng/Universal-Translator
           # Guarded push-trigger fallback: build the latest private source branch for the exact official-release marker.
-          ref: ${{ inputs.source_ref || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.3.7+11]') && 'main') || 'main' }}
+          ref: ${{ inputs.source_ref || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.3.8+12]') && 'main') || 'main' }}
           token: ${{ secrets.SOURCE_REPO_TOKEN }}
           path: source
           persist-credentials: false
@@ -80,6 +80,14 @@ jobs:
             exit 1
           }
           test -s test/arabic_dialect_test.dart
+          grep -Fq 'localizedCandidate' lib/services/translation_service.dart || {
+            echo "Iraqi localization for Arabic translation alternatives is missing" >&2
+            exit 1
+          }
+          grep -Fq 'localizes and deduplicates Arabic alternatives' test/translation_service_test.dart || {
+            echo "Iraqi translation-alternatives regression test is missing" >&2
+            exit 1
+          }
           grep -Fq 'bool _speakAutomatically = true;' lib/pages/live_meeting_page.dart || {
             echo "Automatic lecture speech must be enabled by default" >&2
             exit 1
@@ -432,7 +440,7 @@ jobs:
           retention-days: 14
 
       - name: Publish signed GitHub Release for in-app updates
-        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.publish_release == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.3.7+11]')) }}
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.publish_release == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.3.8+12]')) }}
         working-directory: source
         env:
           GH_TOKEN: ${{ github.token }}
