@@ -24,7 +24,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Check out builder with history
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -55,7 +55,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Check out private application source with history
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: loudply0-eng/Universal-Translator
           ref: ${{ github.ref_name == 'feature/0.3.3-screen-capture-permissions' && 'feature/0.3.3-unified-translation' || 'main' }}
