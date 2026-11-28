@@ -454,8 +454,10 @@ jobs:
           notes = "\n".join(lines[start + 1:end]).strip()
           if not notes:
               raise SystemExit(f"Release notes section is empty: {heading}")
-          if re.search(r"[A-Za-z]{2,}", notes):
-              raise SystemExit("Release notes must be written entirely in Arabic.")
+          arabic_letters = len(re.findall(r"[\u0600-\u06FF]", notes))
+          latin_letters = len(re.findall(r"[A-Za-z]", notes))
+          if arabic_letters < 20 or latin_letters > max(12, arabic_letters // 3):
+              raise SystemExit("Release notes must be primarily written in Arabic.")
           Path(output_path).write_text(
               notes + "\n\n---\nتم فحص سلامة حزمة التثبيت قبل فتح مُثبّت النظام. يتطلب التثبيت موافقتك.\n",
               encoding="utf-8",
