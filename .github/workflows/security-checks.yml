@@ -65,8 +65,8 @@ jobs:
 
       - name: Verify private source candidate version and aligned ML Kit dependencies
         run: |
-          grep -Fq 'version: 0.4.0+14' pubspec.yaml || {
-            echo "Private source candidate must be version 0.4.0+14" >&2
+          grep -Fq 'version: 0.4.1+15' pubspec.yaml || {
+            echo "Private source candidate must be version 0.4.1+15" >&2
             exit 1
           }
           grep -Fq 'google_mlkit_translation: ^1.0.3' pubspec.yaml || {
@@ -95,6 +95,22 @@ jobs:
           }
           test -s lib/services/translation_overlay_service.dart || {
             echo "Safe overlay controller is missing" >&2
+            exit 1
+          }
+          test -s lib/services/pdf_document_text_extractor.dart || {
+            echo "Scanned PDF text extractor is missing" >&2
+            exit 1
+          }
+          grep -Fq 'static const int maximumOcrPages = 30' lib/services/pdf_document_text_extractor.dart || {
+            echo "Scanned PDF OCR resource limit is missing" >&2
+            exit 1
+          }
+          grep -Fq 'await _ocr.recognize(' lib/services/pdf_document_text_extractor.dart || {
+            echo "Scanned PDF pages must use local OCR" >&2
+            exit 1
+          }
+          test -s test/pdf_document_text_extractor_test.dart || {
+            echo "Scanned PDF OCR regression tests are missing" >&2
             exit 1
           }
           grep -Fq 'width: compactWidth' lib/services/translation_overlay_service.dart || {
