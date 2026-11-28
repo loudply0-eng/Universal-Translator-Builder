@@ -65,8 +65,8 @@ jobs:
 
       - name: Verify private source candidate version and aligned ML Kit dependencies
         run: |
-          grep -Fq 'version: 0.3.8+12' pubspec.yaml || {
-            echo "Private source candidate must be version 0.3.7+11" >&2
+          grep -Fq 'version: 0.3.9+13' pubspec.yaml || {
+            echo "Private source candidate must be version 0.3.9+13" >&2
             exit 1
           }
           grep -Fq 'google_mlkit_translation: ^1.0.3' pubspec.yaml || {
@@ -89,6 +89,14 @@ jobs:
             echo "Iraqi localization for Arabic translation alternatives is missing" >&2
             exit 1
           }
+          grep -Fq 'expectedSize: expectedSize' lib/services/update_service.dart || {
+            echo "Updater release asset size tracking is missing" >&2
+            exit 1
+          }
+          if grep -Fq 'maximumApkBytes' lib/services/update_service.dart; then
+            echo "Updater must not impose an artificial APK download ceiling" >&2
+            exit 1
+          fi
           grep -Fq 'localizes and deduplicates Arabic alternatives' test/translation_service_test.dart || {
             echo "Iraqi translation-alternatives regression test is missing" >&2
             exit 1
