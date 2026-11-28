@@ -18,7 +18,7 @@ name: Build Universal Translator APK
       - main
 
 # A push containing the official-release marker publishes the signed APK for in-app updates.
-# Release trigger marker: [official-release:v0.3.9+13] — rebuild and publish every verified uncapped-updater change.
+# Release trigger marker: [official-release:v0.4.0+14] — rebuild and publish every verified uncapped-updater change.
 
 permissions:
   contents: write
@@ -42,7 +42,7 @@ jobs:
         with:
           repository: loudply0-eng/Universal-Translator
           # Guarded push-trigger fallback: build the latest private source branch for the exact official-release marker.
-          ref: ${{ inputs.source_ref || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.3.9+13]') && 'main') || 'main' }}
+          ref: ${{ inputs.source_ref || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.4.0+14]') && 'main') || 'main' }}
           token: ${{ secrets.SOURCE_REPO_TOKEN }}
           path: source
           persist-credentials: false
@@ -69,6 +69,34 @@ jobs:
           # The updater is deliberately uncapped, handles slow links, and reports the published asset size.
           grep -Fq 'expectedSize: expectedSize' lib/services/update_service.dart || {
             echo "Updater must read the published APK size before downloading" >&2
+            exit 1
+          }
+          test -s lib/services/translation_overlay_service.dart || {
+            echo "Central safe overlay controller is missing" >&2
+            exit 1
+          }
+          grep -Fq 'width: compactWidth' lib/services/translation_overlay_service.dart || {
+            echo "Overlay must have a fixed width at creation time" >&2
+            exit 1
+          }
+          grep -Fq 'height: compactHeight' lib/services/translation_overlay_service.dart || {
+            echo "Overlay must have a fixed height at creation time" >&2
+            exit 1
+          }
+          grep -Fq 'dismissConfig: const OverlayDismissConfig()' lib/services/translation_overlay_service.dart || {
+            echo "Overlay drag-to-dismiss protection is missing" >&2
+            exit 1
+          }
+          grep -Fq 'TranslationOverlayService.show(' lib/main.dart || {
+            echo "Home screen bypasses the safe overlay controller" >&2
+            exit 1
+          }
+          grep -Fq 'TranslationOverlayService.show(' lib/pages/live_meeting_page.dart || {
+            echo "Live meeting page bypasses the safe overlay controller" >&2
+            exit 1
+          }
+          test -s test/translation_overlay_service_test.dart || {
+            echo "Overlay sizing regression tests are missing" >&2
             exit 1
           }
           grep -Fq 'maxRedirects = 10' lib/services/update_service.dart || {
@@ -462,7 +490,7 @@ jobs:
           retention-days: 14
 
       - name: Publish signed GitHub Release for in-app updates
-        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.publish_release == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.3.9+13]')) }}
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.publish_release == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[official-release:v0.4.0+14]')) }}
         working-directory: source
         env:
           GH_TOKEN: ${{ github.token }}
