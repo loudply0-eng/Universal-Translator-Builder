@@ -65,7 +65,7 @@ jobs:
 
       - name: Verify private source candidate version and aligned ML Kit dependencies
         run: |
-          grep -Fq 'version: 0.3.7+11' pubspec.yaml || {
+          grep -Fq 'version: 0.3.8+12' pubspec.yaml || {
             echo "Private source candidate must be version 0.3.7+11" >&2
             exit 1
           }
@@ -83,6 +83,14 @@ jobs:
           }
           grep -Fq 'package_info_plus: ^10.2.2' pubspec.yaml || {
             echo "Package information dependency must support file_picker's win32 version" >&2
+            exit 1
+          }
+          grep -Fq 'localizedCandidate' lib/services/translation_service.dart || {
+            echo "Iraqi localization for Arabic translation alternatives is missing" >&2
+            exit 1
+          }
+          grep -Fq 'localizes and deduplicates Arabic alternatives' test/translation_service_test.dart || {
+            echo "Iraqi translation-alternatives regression test is missing" >&2
             exit 1
           }
           grep -Fq 'http.Response.bytes(' test/translation_service_test.dart || {
