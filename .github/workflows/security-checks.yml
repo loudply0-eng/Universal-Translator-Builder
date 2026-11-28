@@ -65,8 +65,8 @@ jobs:
 
       - name: Verify private source candidate version and aligned ML Kit dependencies
         run: |
-          grep -Fq 'version: 0.3.9+13' pubspec.yaml || {
-            echo "Private source candidate must be version 0.3.9+13" >&2
+          grep -Fq 'version: 0.4.0+14' pubspec.yaml || {
+            echo "Private source candidate must be version 0.4.0+14" >&2
             exit 1
           }
           grep -Fq 'google_mlkit_translation: ^1.0.3' pubspec.yaml || {
@@ -91,6 +91,22 @@ jobs:
           }
           grep -Fq 'expectedSize: expectedSize' lib/services/update_service.dart || {
             echo "Updater release asset size tracking is missing" >&2
+            exit 1
+          }
+          test -s lib/services/translation_overlay_service.dart || {
+            echo "Safe overlay controller is missing" >&2
+            exit 1
+          }
+          grep -Fq 'width: compactWidth' lib/services/translation_overlay_service.dart || {
+            echo "Overlay must not use full-screen default width" >&2
+            exit 1
+          }
+          grep -Fq 'height: compactHeight' lib/services/translation_overlay_service.dart || {
+            echo "Overlay must not use full-screen default height" >&2
+            exit 1
+          }
+          test -s test/translation_overlay_service_test.dart || {
+            echo "Overlay regression tests are missing" >&2
             exit 1
           }
           if grep -Fq 'maximumApkBytes' lib/services/update_service.dart; then
