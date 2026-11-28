@@ -17,6 +17,8 @@ name: Build Universal Translator APK
     branches:
       - main
 
+# A push containing the official-release marker publishes the signed APK for in-app updates.
+
 permissions:
   contents: write
 
