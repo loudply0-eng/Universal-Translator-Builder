@@ -18,7 +18,7 @@ name: Build Universal Translator APK
       - main
 
 # A push containing the official-release marker publishes the signed APK for in-app updates.
-# Release trigger marker: [official-release:v0.4.1+15] — build and publish compact, non-blocking overlay fixes.
+# Release trigger marker: [official-release:v0.4.1+15] — build and publish the scanned-PDF OCR release after all checks pass.
 
 permissions:
   contents: write
